@@ -12,6 +12,8 @@ def read_arabic_dataset(name):
         dataset.drop('Unnamed: 6', axis=1)
     except:
         print('There is no such column in the dataset')
+    return dataset
 def clean_data(dataset):
     dataset.fillna('', inplace = True)
     #Might add additional stuff in case
+    return dataset
