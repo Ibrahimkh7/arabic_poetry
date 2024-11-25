@@ -1,0 +1,4 @@
+numpy
+pandas
+random
+sklearn.feature_extraction.text 
