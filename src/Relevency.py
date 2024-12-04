@@ -19,7 +19,7 @@ def map_poem_name_to_frequency(dataset, poem_content_col_name , poem_name_col):
                     dict_map[char][0] +=1
             if char not in dict_map:
                 dict_map[char] = (1,[poem_name])
-    #now we got the document frequency let's get the tf:
+    #now we got the document frequency let's get the tf :
     
     total = 0
 
