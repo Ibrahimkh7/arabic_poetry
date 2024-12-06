@@ -18,7 +18,7 @@ def get_types_from_dataset(dataset, col_containing_type):
         type_p = element_list[0]
         if type_p in types: #checking if it is already in this
             present = True
-        elif not present and type_p.split(' ')[0] == 'قصائد': #the second condition is to ensure that the extracted is indeed a type
+        elif not present and type_p.split(' ')[0] == 'قصائد': #the second condition is to ensure that the extracted is indeed a  type
             types.add(type_p)    
     return types
 
