@@ -7,7 +7,7 @@ from math import log10
 #so the similarity would be weighted on the rarity of words used by the user input
 # we'll work with dictionnaries cz it is more efficient
 
-#we'll create a mapping from the word to the word count in each poem and then in another function we'll compute the necessary
+#we'll create a mapping from the word to the word count in each poem and then in another function we'll compute the necessary computations
 # we're doing it across ALL poems so that the tf-idf would reflect the uniquness of the charachters
 
 
@@ -22,35 +22,48 @@ def map_wrd_to_wordcount_and_poemname(dataset, poem_content_col_name, poem_name_
         #we will append it to the dicttionnary while keeping track of the names of the poems that we encountered
         poem_name = dataset.iloc[row_i][poem_name_col]
         for char in all_charachters_in_poem_of_index_i:
-            if char in dict_map:
-                if poem_name not in dict_map[char][1]:
-                    dict_map[char][0] +=1
-                    dict_map[char][1].append(poem_name)
+            #2 cases are present either the char is already in our dictionnary or is not
+            if char in dict_map: 
+                #2 cases are present so we have the charachter but either the specific poem is not discovered yet so we need to add to the dictionnary a new key with value 1
+                if poem_name not in dict_map[char]:
+                    dict_map[char][poem_name] = 1 
+                #or the poem_name is already discovered and it is not the first time this charachter is mentioned for this specific poem
                 else:
-                    dict_map[char][0] +=1
+                    dict_map[char][poem_name] +=1
             if char not in dict_map:
-                dict_map[char] = (1,[poem_name])
+                #each poem is gonna have its own term frequency 
+                dict_map[char] = {poem_name:1}
     return dict_map
-    #we could convert it to a dataframe but not necessary
+    #we could convert it to a dataframe so that we could better visualize it
 
+#Remember: dict_map is gonna be the charachter mapped to the poem_name which is mapped to the word frequency
+#e.g. D1 = "I love cookies", D2 = "I love football" 
+#the desired output of the program is gonna be:
+#{"I": {D1:1, D2:1}, "love": {D1:1, D2:1}, "cookies": {D1:1}, "football": {D2:1}}
 
+#important notice we should NOT forget to fillnas with zeros when we transform to a dataframe
+#or we take a condition later on while calculating the tfidf stating that if the document is not mentioned it should assign 0 to the mapping
+
+#note we could transform this to a pd library using:
+# mapping = pd.DataFrame.from_dict(dict_map, orient="index")
 
 def map_wrd_to_poemname_and_tf(dataset, poem_content_col_name , poem_name_col):
 # we'll do it on the contents of the poem
     dict_frequency = map_wrd_to_wordcount_and_poemname(dataset, poem_content_col_name, poem_name_col)
-    #now we got the document frequency let's get the tf:
-    
-    total = 0
 
-    #now getting the total number of words in all of the poems
-    for key in dict_frequency:
-        total += dict_frequency[key][0]
+    nb_of_rows = len(dataset)
+    #we will loop over all poems and get their length and modify the values in dict_freq
+    for row in range(nb_of_rows):
+        poem_content = dataset.iloc[row][poem_content_col_name].split()
+        poem_name = poem_name_col
+        nb_words_in_poem = len(poem_content)
+        #updating the dict_frequency for each value for the corresponding poem
+        for char in dict_frequency:
+            if poem_name in dict_frequency[char]:
+                dict_frequency[char][poem_name] = dict_frequency[char][poem_name]/nb_words_in_poem
     
-    #modifying the values
-    for key in dict_frequency:
-        dict_frequency[key][0] = dict_frequency[key][0] / total 
     
-    #now dict_frequency is the dictionnary of frequuency/total nb of words thus
+    #now dict_frequency is the dictionnary of frequency/total nb of words thus
     dict_tf = dict_frequency
     return dict_tf
 
@@ -100,24 +113,51 @@ def map_wrd_to_idf(dataset, poem_content_col_name):
 
 def map_wrd_to_tfidf(dataset, poem_content_col_name, poem_name_col):
     map_wrd_to_freq_and_poems = map_wrd_to_poemname_and_tf(dataset, poem_content_col_name, poem_name_col)
-    
-    map_wrd_to_poem={}
-    map_wrd_tf = {}
-    for i in map_wrd_to_freq_and_poems:
-        map_wrd_to_poem[i] = map_wrd_to_freq_and_poems[i][1] # this will map words to the poems it was mentioned in
 
-#Maybe It would be better to dissect it into 2 from the start or no?
+#############################################
+#Useless
+    # map_wrd_to_poem={}
+    # map_wrd_tf = {}
+    # for char in map_wrd_to_freq_and_poems:
+    #     map_wrd_to_poem[char] = map_wrd_to_freq_and_poems[char][1] # this will map words to the poems it was mentioned in
+##############################################
 
-
-        map_wrd_tf[i] =  map_wrd_to_freq_and_poems[i][0]
     
 #let's get the idf:
 
     map_wrd_idf = map_wrd_to_idf(dataset, poem_content_col_name)
 
-#now we're gonna perform tf.idf
-    tf_idf_map = {}
-    for i in map_wrd_idf:
-        tf_idf_map[i] = map_wrd_idf[i] * map_wrd_tf[i] 
+#now we're gonna perform tf*idf by modifying the tf dict_map
+
+    for char in map_wrd_to_freq_and_poems:
+        for poem in map_wrd_to_freq_and_poems[char]:
+            map_wrd_to_freq_and_poems[char][poem] = map_wrd_to_freq_and_poems[char][poem] * map_wrd_idf[char]
     
-    return (tf_idf_map, map_wrd_to_poem)
+    #now the tf dict_mapping is transformed to the tf-idf mapping of each word to the corresponding poem and tf-idf score
+    tf_idf_mapping = map_wrd_to_freq_and_poems
+    return tf_idf_mapping
+
+#To visualize do the same thing as we did with the tf
+
+      
+
+
+
+
+# from sklearn.feature_extraction.text import TfidfVectorizer
+# import pandas as pd
+# #directly using it
+
+# # a draw back is that we did not keep track of the poems that the rare words were mentioned in
+
+# def map_poem_name_to_idf(dataset, poem_content_col_name , poem_name_col):
+#     vectorizer = TfidfVectorizer()
+    
+#     poems = dataset[poem_content_col_name].values.tolist()
+    
+#     tfidf_matrix = vectorizer.fit_transform(poems)
+
+#     tfidf_array = tfidf_matrix.toarray()
+#     feature_names = vectorizer.get_feature_names_out()
+#     dataframe_tfidf = pd.DataFrame(tfidf_array, columns= feature_names)
+#     return dataframe_tfidf
