@@ -55,13 +55,12 @@ def map_wrd_to_poemname_and_tf(dataset, poem_content_col_name , poem_name_col):
     #we will loop over all poems and get their length and modify the values in dict_freq
     for row in range(nb_of_rows):
         poem_content = dataset.iloc[row][poem_content_col_name].split()
-        poem_name = poem_name_col
+        poem_name = dataset.iloc[row][poem_name_col]
         nb_words_in_poem = len(poem_content)
         #updating the dict_frequency for each value for the corresponding poem
         for char in dict_frequency:
             if poem_name in dict_frequency[char]:
                 dict_frequency[char][poem_name] = dict_frequency[char][poem_name]/nb_words_in_poem
-    
     
     #now dict_frequency is the dictionnary of frequency/total nb of words thus
     dict_tf = dict_frequency
@@ -108,7 +107,7 @@ def map_wrd_to_idf(dataset, poem_content_col_name):
     for i in dict_map_df:
         dict_map_df[i] =  log10((1+nb_non_null_poems)/ (dict_map_df[i]+1))
 # now we got the characters mapped to the idf
-
+    return dict_map_df
 #It is time for the TF-IDF mapping!:
 
 def map_wrd_to_tfidf(dataset, poem_content_col_name, poem_name_col):
@@ -136,28 +135,3 @@ def map_wrd_to_tfidf(dataset, poem_content_col_name, poem_name_col):
     #now the tf dict_mapping is transformed to the tf-idf mapping of each word to the corresponding poem and tf-idf score
     tf_idf_mapping = map_wrd_to_freq_and_poems
     return tf_idf_mapping
-
-#To visualize do the same thing as we did with the tf
-
-      
-
-
-
-
-# from sklearn.feature_extraction.text import TfidfVectorizer
-# import pandas as pd
-# #directly using it
-
-# # a draw back is that we did not keep track of the poems that the rare words were mentioned in
-
-# def map_poem_name_to_idf(dataset, poem_content_col_name , poem_name_col):
-#     vectorizer = TfidfVectorizer()
-    
-#     poems = dataset[poem_content_col_name].values.tolist()
-    
-#     tfidf_matrix = vectorizer.fit_transform(poems)
-
-#     tfidf_array = tfidf_matrix.toarray()
-#     feature_names = vectorizer.get_feature_names_out()
-#     dataframe_tfidf = pd.DataFrame(tfidf_array, columns= feature_names)
-#     return dataframe_tfidf
